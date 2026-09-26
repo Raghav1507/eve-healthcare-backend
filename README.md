@@ -51,8 +51,8 @@ uvicorn app.main:app --reload
 ### `.env`
 
 ```ini
-DATABASE_URL=postgresql+psycopg://eve:eve_secret@localhost:5433/eve_healthcare
-JWT_SECRET=<generate: python -c "import secrets; print(secrets.token_hex(32))">
+DATABASE_URL=postgresql+psycopg://USER:PASSWORD@localhost:5433/eve_healthcare
+JWT_SECRET=generate_a_random_secret_here
 JWT_ALGORITHM=HS256
 JWT_EXPIRE_MINUTES=30
 ```

@@ -15,11 +15,29 @@ PostgreSQL, SQLAlchemy 2.0, and Alembic**.
 | Python | 3.12.8 | Runtime |
 | Docker | 27.x | Runs PostgreSQL (no local PG install needed) |
 
-### Step-by-step
+### Option A — Docker Compose (recommended, one command)
 
 ```powershell
 # 1. Clone and enter the repo
-git clone <repo-url>
+git clone https://github.com/Raghav1507/eve-healthcare-backend.git
+cd eve-healthcare-backend
+
+# 2. Create your local .env from the template and edit it
+#    (set POSTGRES_PASSWORD and JWT_SECRET — .env is git-ignored)
+Copy-Item .env.example .env
+
+# 3. Build and start app + database together (migrations run automatically)
+docker compose up --build
+```
+
+- API + Swagger: http://127.0.0.1:8000/docs
+- Stop: `Ctrl+C` (keep data) or `docker compose down` (add `-v` to also delete DB data)
+
+### Option B — Manual (venv + Docker only for the database)
+
+```powershell
+# 1. Clone and enter the repo
+git clone https://github.com/Raghav1507/eve-healthcare-backend.git
 cd eve-healthcare-backend
 
 # 2. Create an isolated virtual environment
@@ -29,18 +47,22 @@ python -m venv venv
 # 3. Install dependencies (pinned in requirements.txt)
 pip install -r requirements.txt
 
-# 4. Start PostgreSQL in Docker
+# 4. Create your local .env from the template and edit it
+#    (set POSTGRES_PASSWORD and JWT_SECRET — never commit .env)
+Copy-Item .env.example .env
+
+# 5. Start PostgreSQL in Docker — use YOUR password from .env here
 docker run -d --name eve-pg `
   -e POSTGRES_USER=eve `
-  -e POSTGRES_PASSWORD=eve_secret `
+  -e POSTGRES_PASSWORD=<your-POSTGRES_PASSWORD-from-.env> `
   -e POSTGRES_DB=eve_healthcare `
   -p 5433:5432 `
   postgres:16
 
-# 5. Create your .env (see below), then apply the database migration
-alembic upgrade head                # creates all 6 tables
+# 6. Apply the database migration (creates all 6 tables)
+alembic upgrade head
 
-# 6. Run the server
+# 7. Run the server
 uvicorn app.main:app --reload
 ```
 
@@ -50,14 +72,19 @@ uvicorn app.main:app --reload
 
 ### `.env`
 
+Copy `.env.example` → `.env` and fill in your own values:
+
 ```ini
-DATABASE_URL=postgresql+psycopg://eve:eve_secret@localhost:5433/eve_healthcare
+POSTGRES_USER=eve
+POSTGRES_PASSWORD=<your-own-strong-password>
+POSTGRES_DB=eve_healthcare
+DATABASE_URL=postgresql+psycopg://eve:<your-own-strong-password>@localhost:5433/eve_healthcare
 JWT_SECRET=<generate: python -c "import secrets; print(secrets.token_hex(32))">
 JWT_ALGORITHM=HS256
 JWT_EXPIRE_MINUTES=30
 ```
 
-> `.env` is git-ignored on purpose — secrets must never be committed.
+> `.env` is git-ignored on purpose — credentials must never be committed.
 > Note the **5433** host port: the container maps `5433 → 5432`.
 
 ### Run the tests

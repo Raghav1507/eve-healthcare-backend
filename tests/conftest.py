@@ -10,12 +10,29 @@ test B pass or fail. Our schema is tiny so this costs milliseconds.
 """
 import os
 
+from dotenv import load_dotenv
+
+# Read credentials from .env (git-ignored) — NEVER hardcode them in source,
+# or they end up on GitHub for everyone to see.
+load_dotenv()
+
+_dev_url = os.environ.get("DATABASE_URL")
+if not _dev_url:
+    raise RuntimeError(
+        "DATABASE_URL not found. Copy .env.example to .env and fill it in."
+    )
+
+# Derive the TEST url from your dev url by swapping only the database name.
+# Keeps host/port/credentials identical to whatever .env says — one source
+# of truth, zero secrets in this file.
+_base_url, _, _dbname = _dev_url.rpartition("/")
+TEST_URL = _base_url + "/eve_healthcare_test"
+ADMIN_URL = _base_url + "/postgres"
+
 # MUST be set before any `app.*` import: pydantic-settings gives OS env
 # vars priority over .env, so the whole app (engine included) binds to
 # the TEST database, never your real one.
-os.environ["DATABASE_URL"] = (
-    "postgresql+psycopg://eve:eve_secret@localhost:5433/eve_healthcare_test"
-)
+os.environ["DATABASE_URL"] = TEST_URL
 
 import pytest
 from fastapi.testclient import TestClient
@@ -24,9 +41,6 @@ from sqlalchemy.orm import sessionmaker
 
 from app.database import Base, get_db
 from app.main import app
-
-ADMIN_URL = "postgresql+psycopg://eve:eve_secret@localhost:5433/postgres"
-TEST_URL = os.environ["DATABASE_URL"]
 
 # 1. Create the test database if it doesn't exist yet (idempotent).
 admin_engine = create_engine(ADMIN_URL, isolation_level="AUTOCOMMIT")

@@ -1,0 +1,42 @@
+# One-command stack:  docker compose up --build
+#
+# NO passwords in this file. Values come from .env (git-ignored) via ${...}
+# interpolation — docker compose reads .env automatically from this folder.
+# Missing required vars make compose FAIL FAST instead of starting insecurely.
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env (copy .env.example)}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (copy .env.example)}
+      POSTGRES_DB: ${POSTGRES_DB:-eve_healthcare}
+    ports:
+      - "5433:5432"        # host 5433 -> container 5432 (same as manual setup)
+    volumes:
+      - pgdata:/var/lib/postgresql/data   # data survives container recreation
+    healthcheck:
+      # web must WAIT until postgres actually accepts connections, not just
+      # until the container process starts ("depends_on" alone is not enough).
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-eve} -d ${POSTGRES_DB:-eve_healthcare}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # Inside the compose network, the DB hostname is the SERVICE name "db",
+      # not localhost (localhost would mean the web container itself).
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-eve}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-eve_healthcare}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env (see .env.example)}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-30}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

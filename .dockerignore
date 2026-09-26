@@ -1,0 +1,16 @@
+# Keep the build context tiny and, above all, keep secrets OUT of image layers.
+# (A .env copied into an image is extractable forever, even from deleted layers.)
+
+venv/
+.git/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# NEVER build secrets into the image — .env is supplied at runtime instead.
+.env
+
+# Not needed inside the runtime image
+*.md
+check_db.py
+demo_security.py

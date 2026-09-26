@@ -23,5 +23,17 @@
 
 ## Local dev setup
 
-docker run -d --name eve-pg -e POSTGRES_USER=eve -e POSTGRES_PASSWORD=eve_secret -e POSTGRES_DB=eve_healthcare -p 5433:5432 postgres:16
-# Connection URL: postgresql+psycopg://eve:eve_secret@localhost:5433/eve_healthcare
+Credentials live only in `.env` (git-ignored) — see `.env.example` for the
+template. Never commit real passwords or secrets.
+
+```powershell
+Copy-Item .env.example .env   # then edit it
+docker compose up --build     # app + PostgreSQL, migrations auto-run
+```
+
+Manual alternative (DB only):
+
+```powershell
+docker run -d --name eve-pg -e POSTGRES_USER=eve -e POSTGRES_PASSWORD=<your-password-from-.env> -e POSTGRES_DB=eve_healthcare -p 5433:5432 postgres:16
+# Connection URL pattern: postgresql+psycopg://eve:<your-password>@localhost:5433/eve_healthcare
+```

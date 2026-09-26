@@ -20,8 +20,3 @@
 
 - `bookings.amount` is a **snapshot** of the price at booking time — not looked up live from `centre_tests`, so old bookings aren't affected if prices change later.
 - `centre_test_id` on bookings (not separate `centre_id`/`test_id`) ensures a booking can only reference a real, existing centre+test+price combination.
-
-## Local dev setup
-
-docker run -d --name eve-pg -e POSTGRES_USER=eve -e POSTGRES_PASSWORD=eve_secret -e POSTGRES_DB=eve_healthcare -p 5433:5432 postgres:16
-# Connection URL: postgresql+psycopg://eve:eve_secret@localhost:5433/eve_healthcare
